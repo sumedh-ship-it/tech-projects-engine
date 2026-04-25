@@ -40,14 +40,17 @@ def classify():
     # Fetch jobs from ClickHouse
     domain_sql = ", ".join([f"'{d}'" for d in domains])
     query = f"""
-        SELECT company_domain, job_title, job_description, job_url, all_skills, job_posted_date
-        FROM org_jobs
+        SELECT company_domain, job_title, job_description, job_url, all_skills_slugs, job_posted_date
+        FROM org_jobs_inter
         WHERE job_status = 'active' AND company_domain IN ({domain_sql})
     """
 
     start = time.time()
-    with CH_ENGINE.connect() as conn:
-        rows = conn.execute(text(query)).fetchall()
+    try:
+        with CH_ENGINE.connect() as conn:
+            rows = conn.execute(text(query)).fetchall()
+    except Exception as e:
+        return jsonify({"error": f"Database error: {str(e)}", "results": {}, "meta": {}}), 500
         
     # Contextual Personas per Project ID
     PROJECT_PERSONAS = {
@@ -140,12 +143,16 @@ def classify():
         parsed_jobs = []
         
         for idx, (title, desc, job_url, all_skills_str, job_posted_date) in enumerate(jobs):
-            parsed_skills = []
-            if all_skills_str:
+            # clickhouse-sqlalchemy returns Array columns as Python lists directly
+            if isinstance(all_skills_str, list):
+                parsed_skills = all_skills_str
+            elif isinstance(all_skills_str, str) and all_skills_str:
                 try:
                     parsed_skills = ast.literal_eval(all_skills_str)
                 except:
-                    pass
+                    parsed_skills = []
+            else:
+                parsed_skills = []
                     
             days_ago = 999
             if job_posted_date:
@@ -274,6 +281,15 @@ def classify():
             "total_claude_classified": total_claude,
         }
     })
+
+@app.route('/api/health')
+def health():
+    try:
+        with CH_ENGINE.connect() as conn:
+            count = conn.execute(text("SELECT count() FROM org_jobs_inter WHERE job_status='active' LIMIT 1")).fetchone()[0]
+        return jsonify({"status": "ok", "active_jobs": count})
+    except Exception as e:
+        return jsonify({"status": "error", "detail": str(e)}), 500
 
 @app.route('/api/taxonomy')
 def taxonomy():
