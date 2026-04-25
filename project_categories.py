@@ -1036,25 +1036,31 @@ CATEGORIES: list[Category] = [
             "upwind",
         ],
         supporting_slugs=[
+            "cloud-security",
             "cloud-compliance",
             "cloud-native-security",
             "admission-controller",
             "security-posture",
             "misconfiguration",
             "infrastructure-security",
+            "information-security",
+            "cybersecurity",
+            "security-engineering",
+            "aws-security",
+            "azure-security",
+            "gcp-security",
+            "cloud-security-posture",
         ],
         job_title_patterns=[
             r"(cloud security|cnapp|cspm|cloud native security)\s*(engineer|architect|analyst|lead)?",
             r"(security|cloud)\s+engineer.*(cloud|posture|cnapp|cspm)",
             r"(wiz|prisma|lacework|orca|sysdig)\s+(admin|engineer|implementation)",
-        ],
-        co_occurrence_required=[
-            # cloud-security broad — gate to CSPM/CNAPP context
-            CoOccurrenceRule(slug="cloud-security", requires_any=["wiz", "orca", "lacework", "prisma-cloud", "cspm", "cnapp", "kubernetes-security"], or_title_match=True),
+            r"cloud\s+security\s+(engineer|architect|analyst|manager|lead)",
         ],
         noise_notes=(
-            "Added Sysdig and Ermetic to slugs (were missing from buyer roundtrip in v1). "
-            "cloud-security gated to CSPM/CNAPP context."
+            "Added cloud-security, information-security, cybersecurity to supporting_slugs "
+            "so cloud security companies (wiz.io etc.) can be detected from their own job posts. "
+            "Removed dead co_occurrence_required for cloud-security (was never indexed)."
         ),
     ),
 
@@ -1133,6 +1139,7 @@ CATEGORIES: list[Category] = [
         primary_slugs=[
             "crowdstrike",
             "sentinelone",
+            "splunk",
             "security-information-and-event-management-siem",
             "soar",
             "soc",
@@ -1148,7 +1155,7 @@ CATEGORIES: list[Category] = [
             "torq",
             "swimlane",
             "tines",
-            "splunk-es",          # Splunk Enterprise Security specifically
+            "splunk-es",
             "elastic-security",
         ],
         supporting_slugs=[
@@ -1159,6 +1166,9 @@ CATEGORIES: list[Category] = [
             "qualys",
             "rapid7",
             "zap",
+            "security-operations",
+            "cyber-threat-intelligence",
+            "siem",
         ],
         job_title_patterns=[
             r"(soc|security operations|siem|soar)\s*(analyst|engineer|manager|lead|architect)?",
@@ -1719,7 +1729,7 @@ def _co_occurrence_satisfied(rule: CoOccurrenceRule,
 def classify_company(
     company_name: str,
     job_entries: list[dict],   # each: {"title": str, "slugs": list[str], "days_ago": int}
-    min_confidence: float = 5.0,
+    min_confidence: float = 3.0,
 ) -> dict:
     """
     Classify a company into one or more dev-tool buying-signal categories.
@@ -1799,20 +1809,19 @@ def classify_company(
                 counts[cat.id] += weight
                 raw_counts[cat.id] += 1
 
-    # Confidence scoring
-    effective_total = total * 1.5  # weighted-scale normalization
+    # Confidence scoring — use raw total (no inflation) so percentages are accurate
     scores = {
-        cat.id: round(min(100.0, (counts[cat.id] / effective_total) * 100), 1)
+        cat.id: round(min(100.0, (counts[cat.id] / total) * 100), 1)
         for cat in CATEGORIES
     }
 
     qualifying_ids = []
     for cat in CATEGORIES:
-        # Original percentage-based threshold
+        # Percentage-based threshold: confidence >= min AND at least min_jobs matching
         percentage_qualifies = scores[cat.id] >= min_confidence and raw_counts[cat.id] >= cat.min_jobs
-        # Absolute threshold: for large enterprises, 10+ strict co-occurring jobs is a definitive signal
-        absolute_qualifies = raw_counts[cat.id] >= 10
-        
+        # Absolute threshold: 3+ matching jobs is always a real signal for precise slugs
+        absolute_qualifies = raw_counts[cat.id] >= 3
+
         if percentage_qualifies or absolute_qualifies:
             qualifying_ids.append(cat.id)
 
