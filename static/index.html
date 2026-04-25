@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Security Intelligence — Projects, Teams & Signals</title>
+  <meta name="description" content="Analyze any company domain to discover AI security projects, teams, tech stack, and hiring signals from job descriptions.">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>🛡️ Agentic AI Security Intelligence</h1>
+      <p>Input a domain → Discover projects, teams, tech stack & hiring signals from JDs</p>
+    </header>
+
+    <section class="search-section">
+      <div class="search-box">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="domainInput" placeholder="Enter company domain (e.g. straiker.ai)" autocomplete="off">
+          <div class="autocomplete-dropdown" id="acDropdown"></div>
+        </div>
+        <button class="search-btn" id="analyzeBtn" onclick="analyzeDomain()">Analyze</button>
+      </div>
+      <div class="quick-domains" id="quickDomains"></div>
+    </section>
+
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p id="loaderText">Fetching JDs & running signal extraction…</p>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div id="results"></div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+
+# Large data files
+*.csv
+*.json
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Node (frontend dev only — built assets in static/ are committed)
+frontend/node_modules/
+frontend/dist/
+
+# Scratch / test files
+test_*.py
+scratch/
+scratch_desc.py
