@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tech-projects-signal
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app_classifier:app
+    envVars:
+      - key: CH_USER
+        sync: false
+      - key: CH_PASS
+        sync: false
+      - key: CH_HOST
+        sync: false
+      - key: CH_LI_HOST
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
